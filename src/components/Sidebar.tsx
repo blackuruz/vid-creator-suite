@@ -12,6 +12,8 @@ import {
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   Home,
   Users,
@@ -21,7 +23,10 @@ import {
   Play,
   Youtube,
   Activity,
+  User,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigationItems = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -33,8 +38,13 @@ const navigationItems = [
   { title: 'Settings', url: '/settings', icon: Settings },
 ];
 
+const accountItems = [
+  { title: 'Profile', url: '/profile', icon: User },
+];
+
 export function Sidebar() {
   const { state } = useSidebar();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
   const isCollapsed = state === 'collapsed';
@@ -44,6 +54,15 @@ export function Sidebar() {
     isActive 
       ? 'bg-gradient-to-r from-brand-red/20 to-brand-dark/20 text-brand-red border-r-2 border-brand-red font-medium' 
       : 'hover:bg-muted/50 transition-colors';
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <SidebarUI
@@ -88,9 +107,64 @@ export function Sidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className={isCollapsed ? 'sr-only' : ''}>
+            Account
+          </SidebarGroupLabel>
+          
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {accountItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.url} 
+                      className={getNavCls}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {!isCollapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       
-      <div className="mt-auto p-2">
+      <div className="mt-auto p-2 space-y-2">
+        {/* User Info */}
+        {!isCollapsed && user && (
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={user.user_metadata?.avatar_url} />
+              <AvatarFallback className="text-xs">
+                {getInitials(user.user_metadata?.name || user.email?.split('@')[0] || 'U')}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
+                {user.user_metadata?.name || user.email?.split('@')[0]}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user.email}
+              </p>
+            </div>
+          </div>
+        )}
+        
+        {/* Logout Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => signOut()}
+          className={`w-full gap-2 ${isCollapsed ? 'px-2' : ''}`}
+        >
+          <LogOut className="w-4 h-4" />
+          {!isCollapsed && <span>Logout</span>}
+        </Button>
+        
         <SidebarTrigger className="w-full" />
       </div>
     </SidebarUI>
